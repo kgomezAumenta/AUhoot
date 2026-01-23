@@ -1,65 +1,246 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
+import { Check, X, Loader2 } from 'lucide-react';
+
+export default function ParticipantPage() {
+  const [settings, setSettings] = useState<any>(null);
+  const [nickname, setNickname] = useState('');
+  const [playerId, setPlayerId] = useState<string | null>(null);
+  const [joined, setJoined] = useState(false);
+
+  // Game State
+  const [currentQuestion, setCurrentQuestion] = useState<any>(null);
+  const [result, setResult] = useState<any>(null); // { correct: boolean, score: number }
+  const [isAnswering, setIsAnswering] = useState(false);
+
+  useEffect(() => {
+    // 1. Branding & Local Resume
+    fetchSettings();
+    const storedId = localStorage.getItem('auhoot_player_id');
+    const storedNick = localStorage.getItem('auhoot_nickname');
+    if (storedId && storedNick) {
+      setPlayerId(storedId);
+      setNickname(storedNick);
+      setJoined(true);
+      // Optional: Verify if player still exists in DB, but skip for MVP
+    }
+  }, []);
+
+  useEffect(() => {
+    // 2. Realtime Game Control
+    const channel = supabase.channel('participant_view')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'game_control' },
+        (payload) => {
+          const newData = payload.new;
+          if (newData.is_active && newData.active_question_id) {
+            fetchQuestion(newData.active_question_id);
+          } else {
+            setCurrentQuestion(null);
+            setResult(null);
+          }
+        }
+      )
+      .subscribe();
+
+    // Initial check
+    checkActiveGame();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchSettings = async () => {
+    const { data } = await supabase.from('settings').select('*').single();
+    if (data) setSettings(data);
+  };
+
+  const checkActiveGame = async () => {
+    const { data } = await supabase.from('game_control').select('*').eq('id', 1).single();
+    if (data && data.is_active && data.active_question_id) {
+      fetchQuestion(data.active_question_id);
+    } else {
+      setCurrentQuestion(null);
+    }
+  };
+
+  const fetchQuestion = async (id: string) => {
+    const { data } = await supabase.from('questions').select('*').eq('id', id).single();
+    if (data) {
+      setCurrentQuestion(data);
+      setResult(null);
+      setIsAnswering(false);
+      if (navigator.vibrate) navigator.vibrate(200);
+    }
+  };
+
+  const joinGame = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nickname.trim()) return;
+
+    try {
+      const { data, error } = await supabase.from('players').insert([{ nickname }]).select().single();
+      if (error) {
+        alert('Nickname might be taken, try another!');
+        return;
+      }
+
+      setPlayerId(data.id);
+      localStorage.setItem('auhoot_player_id', data.id);
+      localStorage.setItem('auhoot_nickname', nickname);
+      setJoined(true);
+    } catch (err) {
+      alert('Failed to join');
+    }
+  };
+
+  const submitAnswer = async (index: number) => {
+    if (isAnswering || result || !playerId) return;
+    setIsAnswering(true);
+
+    const isCorrect = currentQuestion.correct_option === index;
+    let newScore = 0;
+
+    if (isCorrect) {
+      // Fetch current score first to be safe
+      const { data: userData } = await supabase.from('players').select('score').eq('id', playerId).single();
+      const currentScore = userData?.score || 0;
+      newScore = currentScore + 1;
+
+      await supabase.from('players').update({ score: newScore }).eq('id', playerId);
+    } else {
+      const { data: userData } = await supabase.from('players').select('score').eq('id', playerId).single();
+      newScore = userData?.score || 0;
+    }
+
+    setResult({ correct: isCorrect, score: newScore });
+    setIsAnswering(false);
+  };
+
+  if (!settings) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div>;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div
+      className="min-h-screen flex flex-col font-sans transition-colors duration-500"
+      style={{
+        backgroundColor: settings.primary_color,
+        color: settings.secondary_color,
+        fontFamily: 'Inter, sans-serif'
+      }}
+    >
+      {/* Login Screen */}
+      {!joined && (
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          {settings.logo_url && (
+            <img src={settings.logo_url} alt="Logo" className="h-24 w-auto mb-8 object-contain" />
+          )}
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Join Game</h2>
+            <form onSubmit={joinGame} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Enter Nickname"
+                className="w-full p-4 text-lg border rounded-xl text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                maxLength={15}
+              />
+              <button
+                type="submit"
+                className="w-full bg-black text-white py-4 rounded-xl text-xl font-bold hover:opacity-90 transition-opacity"
+              >
+                Ready to Play!
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      )}
+
+      {/* Waiting Screen */}
+      {joined && !currentQuestion && !result && (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-pulse">
+          {settings.logo_url && (
+            <img src={settings.logo_url} alt="Logo" className="h-20 w-auto mb-4 object-contain" />
+          )}
+          <h2 className="text-xl font-bold mb-8 opacity-90">{settings.game_title}</h2>
+          <h1 className="text-3xl font-bold mb-4">You're in, {nickname}!</h1>
+          <p className="text-xl opacity-80">Watch the big screen...</p>
         </div>
-      </main>
+      )}
+
+      {/* Game Interface */}
+      {joined && currentQuestion && !result && (
+        <div className="flex-1 p-6 flex flex-col h-full max-h-screen pb-safe">
+          {/* Question Text Display */}
+          <div className="mb-6 p-6 bg-white rounded-2xl shadow-lg text-center">
+            <h2 className="text-2xl font-bold text-gray-900 leading-tight">
+              {currentQuestion.question_text}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 flex-1">
+            <button
+              onClick={() => submitAnswer(0)}
+              className="bg-red-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center h-20"
+            >
+              <span className="sr-only">Option 1</span>
+            </button>
+            <button
+              onClick={() => submitAnswer(1)}
+              className="bg-blue-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center h-20"
+            >
+              <span className="sr-only">Option 2</span>
+            </button>
+            <button
+              onClick={() => submitAnswer(2)}
+              className="bg-yellow-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center h-20"
+            >
+              <span className="sr-only">Option 3</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Result Screen */}
+      {joined && result && (
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className={`flex-1 flex flex-col items-center justify-center p-8 text-center
+            ${result.correct ? 'bg-green-600' : 'bg-red-600'}
+            transition-colors duration-500
+          `}
+          style={{ color: 'white' }}
+        >
+          {/* Branding on Result Screen */}
+          {settings.logo_url && (
+            <img src={settings.logo_url} alt="Logo" className="h-16 w-auto mb-2 object-contain" />
+          )}
+          <p className="text-lg font-bold mb-8 opacity-80">{settings.game_title}</p>
+
+          {result.correct ? (
+            <Check className="w-32 h-32 mb-4" />
+          ) : (
+            <X className="w-32 h-32 mb-4" />
+          )}
+
+          <h2 className="text-4xl font-bold mb-2">
+            {result.correct ? 'Correct!' : 'Wrong!'}
+          </h2>
+
+          <div className="mt-8 bg-black/20 p-4 rounded-xl">
+            <p className="text-sm opacity-80 uppercase tracking-widest">Total Score</p>
+            <p className="text-5xl font-mono font-bold">{result.score}</p>
+          </div>
+
+          <p className="mt-12 opacity-80 animate-pulse">Waiting for next question...</p>
+        </motion.div>
+      )}
     </div>
   );
 }
