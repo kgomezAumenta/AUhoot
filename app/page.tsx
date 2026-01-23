@@ -47,13 +47,21 @@ export default function ParticipantPage() {
       )
       .subscribe();
 
+    // Check if we already answered this specific question
+    if (localStorage.getItem(`auhoot_answered_${currentQuestion?.id}`)) {
+      const savedResult = localStorage.getItem(`auhoot_result_${currentQuestion?.id}`);
+      if (savedResult) {
+        setResult(JSON.parse(savedResult));
+      }
+    }
+
     // Initial check
     checkActiveGame();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [currentQuestion?.id]); // Add dependency to re-check on question change
 
   const fetchSettings = async () => {
     const { data } = await supabase.from('settings').select('*').single();
@@ -118,8 +126,13 @@ export default function ParticipantPage() {
       newScore = userData?.score || 0;
     }
 
-    setResult({ correct: isCorrect, score: newScore });
+    const resultObj = { correct: isCorrect, score: newScore };
+    setResult(resultObj);
     setIsAnswering(false);
+
+    // Save to LocalStorage to prevent refresh cheating
+    localStorage.setItem(`auhoot_answered_${currentQuestion.id}`, 'true');
+    localStorage.setItem(`auhoot_result_${currentQuestion.id}`, JSON.stringify(resultObj));
   };
 
   if (!settings) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div>;
