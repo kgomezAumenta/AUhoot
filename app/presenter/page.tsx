@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import { Trophy } from 'lucide-react';
+import { Trophy, LogOut } from 'lucide-react';
+import LoginScreen from '@/components/LoginScreen';
 
 export default function PresenterPage() {
     const [settings, setSettings] = useState<any>(null);
@@ -11,8 +12,12 @@ export default function PresenterPage() {
     const [currentQuestion, setCurrentQuestion] = useState<any>(null);
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [isSpinning, setIsSpinning] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
+        const session = localStorage.getItem('auhoot_presenter_session');
+        if (session === 'true') setIsAuthenticated(true);
+
         // 1. Fetch Branding & Questions
         fetchDisplayData();
 
@@ -33,6 +38,11 @@ export default function PresenterPage() {
             supabase.removeChannel(channel);
         };
     }, []);
+
+    const handleLoginSuccess = () => {
+        setIsAuthenticated(true);
+        localStorage.setItem('auhoot_presenter_session', 'true');
+    };
 
     const fetchDisplayData = async () => {
         const { data: settingsData } = await supabase.from('settings').select('*').single();
@@ -75,7 +85,8 @@ export default function PresenterPage() {
         await supabase.from('game_control').update({ active_question_id: selected.id, is_active: true }).eq('id', 1);
     };
 
-    if (!settings) return <div className="p-8 text-center">Loading Studio...</div>;
+    if (!isAuthenticated) return <LoginScreen onSuccess={handleLoginSuccess} />;
+    if (!settings) return <div className="p-8 text-center text-white font-bold text-xl">Cargando Estudio...</div>;
 
     return (
         <div
@@ -86,6 +97,18 @@ export default function PresenterPage() {
                 fontFamily: 'Inter, sans-serif' // Fallback or add to settings if needed
             }}
         >
+            {/* Logout Button */}
+            <button
+                onClick={() => {
+                    localStorage.removeItem('auhoot_presenter_session');
+                    setIsAuthenticated(false);
+                }}
+                className="fixed top-8 right-8 bg-white/10 backdrop-blur p-2 rounded-full hover:bg-white/20 transition"
+                title="Cerrar Sesión"
+            >
+                <LogOut className="w-6 h-6 text-white" />
+            </button>
+
             {/* Branding Header */}
             <header className="absolute top-8 left-8 flex flex-col space-y-2">
                 {settings.logo_url && (

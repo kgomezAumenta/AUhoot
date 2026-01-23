@@ -2,17 +2,41 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Plus, Save, RotateCcw, Upload, FileSpreadsheet } from 'lucide-react';
+import { Trash2, Plus, Save, RotateCcw, Upload, FileSpreadsheet, Lock, Unlock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-
+import LoginScreen from '@/components/LoginScreen';
 
 export default function AdminPage() {
     const [activeTab, setActiveTab] = useState('branding');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    useEffect(() => {
+        const session = localStorage.getItem('auhoot_admin_session');
+        if (session === 'true') setIsAuthenticated(true);
+    }, []);
+
+    const handleLoginSuccess = () => {
+        setIsAuthenticated(true);
+        localStorage.setItem('auhoot_admin_session', 'true');
+    };
+
+    if (!isAuthenticated) return <LoginScreen onSuccess={handleLoginSuccess} />;
 
     return (
         <div className="min-h-screen bg-gray-100 p-8 font-sans text-gray-800">
             <header className="mb-8 flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-gray-900">AUhoot Admin (Supabase)</h1>
+                <div className="flex items-center space-x-4">
+                    <h1 className="text-3xl font-bold text-gray-900">AUhoot Admin (Supabase)</h1>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem('auhoot_admin_session');
+                            setIsAuthenticated(false);
+                        }}
+                        className="text-sm text-red-500 hover:underline"
+                    >
+                        Cerrar Sesión
+                    </button>
+                </div>
                 <nav className="flex space-x-4 bg-white p-2 rounded-lg shadow">
                     {['branding', 'questions', 'control'].map((tab) => (
                         <button
@@ -23,7 +47,7 @@ export default function AdminPage() {
                                 : 'text-gray-600 hover:bg-gray-50'
                                 }`}
                         >
-                            {tab}
+                            {tab === 'branding' ? 'Marca' : tab === 'questions' ? 'Preguntas' : 'Control'}
                         </button>
                     ))}
                 </nav>
@@ -392,10 +416,32 @@ function QuestionsTab() {
 }
 
 function ControlTab() {
+    const [gameStatus, setGameStatus] = useState('CLOSED');
+
+    useEffect(() => {
+        fetchStatus();
+    }, []);
+
+    const fetchStatus = async () => {
+        const { data } = await supabase.from('game_control').select('game_status').eq('id', 1).single();
+        if (data && data.game_status) setGameStatus(data.game_status);
+    };
+
+    const toggleGameStatus = async () => {
+        const newStatus = gameStatus === 'OPEN' ? 'CLOSED' : 'OPEN';
+        await supabase.from('game_control').update({ game_status: newStatus }).eq('id', 1);
+        setGameStatus(newStatus);
+
+        if (newStatus === 'CLOSED') {
+            // Also deactivate current question just in case
+            await supabase.from('game_control').update({ active_question_id: null, is_active: false }).eq('id', 1);
+        }
+    };
+
     const resetGame = async () => {
         if (
             !confirm(
-                'This will delete all participants and scores, and reset active question. Are you sure?'
+                '¿Estás SEGURO? Esto borrará el puntaje de todos los jugadores y reiniciará el juego.'
             )
         )
             return;
@@ -405,7 +451,7 @@ function ControlTab() {
         // 2. Reset active question
         await supabase.from('game_control').update({ active_question_id: null, is_active: false }).eq('id', 1);
 
-        alert('Game has been reset');
+        alert('El juego ha sido reiniciado');
     };
 
     return (
@@ -413,20 +459,41 @@ function ControlTab() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="bg-white p-6 rounded-xl shadow-lg"
+            className="space-y-6"
         >
-            <h2 className="text-xl font-semibold mb-4 text-red-600">Danger Zone</h2>
-            <p className="text-gray-600 mb-6">
-                Use these controls to manage the live game session. Resetting the game
-                will clear all player data.
-            </p>
-            <button
-                onClick={resetGame}
-                className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold flex items-center space-x-2 hover:bg-red-700 shadow-md"
-            >
-                <RotateCcw size={20} />
-                <span>RESET GAME & PARTICIPANTS</span>
-            </button>
+            {/* Game Status Toggle */}
+            <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between">
+                <div>
+                    <h2 className="text-xl font-semibold mb-1">Estado del Juego</h2>
+                    <p className={`text-lg font-bold ${gameStatus === 'OPEN' ? 'text-green-600' : 'text-red-600'}`}>
+                        {gameStatus === 'OPEN' ? '🟢 ABIERTO (Jugadores pueden unirse)' : '🔴 CERRADO (Juego Inactivo)'}
+                    </p>
+                </div>
+                <button
+                    onClick={toggleGameStatus}
+                    className={`px-8 py-3 rounded-lg font-bold shadow transition-colors text-white
+                        ${gameStatus === 'OPEN' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
+                    `}
+                >
+                    {gameStatus === 'OPEN' ? <span className="flex items-center"><Lock className="mr-2" /> CERRAR JUEGO</span> : <span className="flex items-center"><Unlock className="mr-2" /> ABRIR JUEGO</span>}
+                </button>
+            </div>
+
+
+            <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-red-500">
+                <h2 className="text-xl font-bold text-red-600 mb-4 flex items-center">
+                    <RotateCcw className="mr-2" /> Zona de Peligro
+                </h2>
+                <p className="text-gray-600 mb-6">
+                    Esta acción eliminará a todos los jugadores de la tabla de posiciones y desactivará cualquier pregunta activa. Úsala solo para iniciar una nueva sesión completa.
+                </p>
+                <button
+                    onClick={resetGame}
+                    className="bg-red-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-red-700 transition w-full md:w-auto"
+                >
+                    REINICIAR JUEGO (BORRAR TODO)
+                </button>
+            </div>
         </motion.div>
     );
 }

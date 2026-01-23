@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, Lock } from 'lucide-react';
 
 export default function ParticipantPage() {
   const [settings, setSettings] = useState<any>(null);
@@ -15,6 +15,7 @@ export default function ParticipantPage() {
   const [currentQuestion, setCurrentQuestion] = useState<any>(null);
   const [result, setResult] = useState<any>(null); // { correct: boolean, score: number }
   const [isAnswering, setIsAnswering] = useState(false);
+  const [gameStatus, setGameStatus] = useState('CLOSED');
 
   useEffect(() => {
     // 1. Branding & Local Resume
@@ -37,6 +38,9 @@ export default function ParticipantPage() {
         { event: 'UPDATE', schema: 'public', table: 'game_control' },
         (payload) => {
           const newData = payload.new;
+
+          if (newData.game_status) setGameStatus(newData.game_status);
+
           if (newData.is_active && newData.active_question_id) {
             fetchQuestion(newData.active_question_id);
           } else {
@@ -70,10 +74,13 @@ export default function ParticipantPage() {
 
   const checkActiveGame = async () => {
     const { data } = await supabase.from('game_control').select('*').eq('id', 1).single();
-    if (data && data.is_active && data.active_question_id) {
-      fetchQuestion(data.active_question_id);
-    } else {
-      setCurrentQuestion(null);
+    if (data) {
+      setGameStatus(data.game_status || 'CLOSED');
+      if (data.is_active && data.active_question_id) {
+        fetchQuestion(data.active_question_id);
+      } else {
+        setCurrentQuestion(null);
+      }
     }
   };
 
@@ -136,6 +143,31 @@ export default function ParticipantPage() {
   };
 
   if (!settings) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div>;
+
+  // CLOSED STATE
+  if (gameStatus === 'CLOSED') {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-8 font-sans transition-colors duration-500"
+        style={{
+          backgroundColor: settings.primary_color,
+          color: settings.secondary_color,
+          fontFamily: 'Inter, sans-serif'
+        }}
+      >
+        {settings.logo_url && (
+          <img src={settings.logo_url} alt="Logo" className="h-32 w-auto mb-8 object-contain" />
+        )}
+        <h1 className="text-3xl font-bold mb-4 text-center">{settings.game_title}</h1>
+        <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20 text-center">
+          <p className="text-xl font-medium flex items-center justify-center">
+            <Lock className="mr-2 w-6 h-6" /> Juego Inactivo
+          </p>
+          <p className="mt-2 opacity-80 text-sm">Espera a que el presentador inicie la sesión.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
