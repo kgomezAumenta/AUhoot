@@ -184,24 +184,19 @@ export default function ParticipantPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 flex-1">
-            <button
-              onClick={() => submitAnswer(0)}
-              className="bg-red-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center h-20"
-            >
-              <span className="sr-only">Option 1</span>
-            </button>
-            <button
-              onClick={() => submitAnswer(1)}
-              className="bg-blue-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center h-20"
-            >
-              <span className="sr-only">Option 2</span>
-            </button>
-            <button
-              onClick={() => submitAnswer(2)}
-              className="bg-yellow-500 rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center h-20"
-            >
-              <span className="sr-only">Option 3</span>
-            </button>
+            {currentQuestion.options.map((option: string, index: number) => (
+              <button
+                key={index}
+                onClick={() => submitAnswer(index)}
+                className={`rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center p-4 min-h-[80px]
+                  ${index === 0 ? 'bg-red-500' : ''}
+                  ${index === 1 ? 'bg-blue-500' : ''}
+                  ${index === 2 ? 'bg-yellow-500' : ''}
+                `}
+              >
+                <span className="text-white text-xl font-bold leading-tight">{option}</span>
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -238,6 +233,13 @@ export default function ParticipantPage() {
           <h2 className="text-4xl font-bold mb-2">
             {result.correct ? '¡Correcto!' : '¡Incorrecto!'}
           </h2>
+
+          {!result.correct && currentQuestion && (
+            <div className="mt-4 p-4 bg-white/20 rounded-xl">
+              <p className="text-sm font-bold uppercase mb-1">La respuesta era:</p>
+              <p className="text-xl font-bold">{currentQuestion.options[currentQuestion.correct_option]}</p>
+            </div>
+          )}
 
           <div className="mt-8 bg-black/20 p-4 rounded-xl">
             <p className="text-sm opacity-80 uppercase tracking-widest">Puntaje Total</p>
