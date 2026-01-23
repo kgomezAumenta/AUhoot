@@ -118,9 +118,9 @@ export default function PresenterPage() {
                                     disabled={isSpinning || questions.length === 0}
                                     className="px-12 py-4 bg-white text-black text-2xl font-bold rounded-full shadow-2xl hover:scale-105 transition-transform disabled:opacity-50"
                                 >
-                                    {isSpinning ? 'SPINNING...' : 'SPIN WHEEL'}
+                                    {isSpinning ? 'GIRANDO...' : 'GIRAR RULETA'}
                                 </button>
-                                {questions.length === 0 && <p className="mt-4 opacity-75">No questions loaded.</p>}
+                                {questions.length === 0 && <p className="mt-4 opacity-75">No hay preguntas cargadas.</p>}
                             </motion.div>
                         ) : (
                             <motion.div
@@ -151,7 +151,7 @@ export default function PresenterPage() {
                                     }}
                                     className="mt-8 px-6 py-2 text-gray-500 hover:text-gray-900 underline"
                                 >
-                                    Back to Wheel
+                                    Volver a la Ruleta
                                 </button>
                             </motion.div>
                         )}
@@ -162,12 +162,12 @@ export default function PresenterPage() {
                 <aside className="w-1/3 bg-white/20 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/30">
                     <div className="flex items-center space-x-3 mb-6 border-b border-white/30 pb-4">
                         <Trophy className="w-8 h-8 text-yellow-300" />
-                        <h2 className="text-2xl font-bold">Leaderboard</h2>
+                        <h2 className="text-2xl font-bold">Tabla de Posiciones</h2>
                     </div>
 
                     <div className="space-y-4">
                         {leaderboard.length === 0 ? (
-                            <p className="text-center opacity-70 italic">Waiting for players...</p>
+                            <p className="text-center opacity-70 italic">Esperando jugadores...</p>
                         ) : (
                             leaderboard.map((player, idx) => (
                                 <motion.div

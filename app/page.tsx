@@ -140,11 +140,11 @@ export default function ParticipantPage() {
             <img src={settings.logo_url} alt="Logo" className="h-24 w-auto mb-8 object-contain" />
           )}
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Join Game</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Unirse al Juego</h2>
             <form onSubmit={joinGame} className="space-y-4">
               <input
                 type="text"
-                placeholder="Enter Nickname"
+                placeholder="Tu Apodo"
                 className="w-full p-4 text-lg border rounded-xl text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
@@ -154,7 +154,7 @@ export default function ParticipantPage() {
                 type="submit"
                 className="w-full bg-black text-white py-4 rounded-xl text-xl font-bold hover:opacity-90 transition-opacity"
               >
-                Ready to Play!
+                ¡Listo para Jugar!
               </button>
             </form>
           </div>
@@ -168,8 +168,8 @@ export default function ParticipantPage() {
             <img src={settings.logo_url} alt="Logo" className="h-20 w-auto mb-4 object-contain" />
           )}
           <h2 className="text-xl font-bold mb-8 opacity-90">{settings.game_title}</h2>
-          <h1 className="text-3xl font-bold mb-4">You're in, {nickname}!</h1>
-          <p className="text-xl opacity-80">Watch the big screen...</p>
+          <h1 className="text-3xl font-bold mb-4">¡Estás dentro, {nickname}!</h1>
+          <p className="text-xl opacity-80">Mira la pantalla principal...</p>
         </div>
       )}
 
@@ -229,16 +229,22 @@ export default function ParticipantPage() {
             <X className="w-32 h-32 mb-4" />
           )}
 
+          {result.correct ? (
+            <Check className="w-32 h-32 mb-4" />
+          ) : (
+            <X className="w-32 h-32 mb-4" />
+          )}
+
           <h2 className="text-4xl font-bold mb-2">
-            {result.correct ? 'Correct!' : 'Wrong!'}
+            {result.correct ? '¡Correcto!' : '¡Incorrecto!'}
           </h2>
 
           <div className="mt-8 bg-black/20 p-4 rounded-xl">
-            <p className="text-sm opacity-80 uppercase tracking-widest">Total Score</p>
+            <p className="text-sm opacity-80 uppercase tracking-widest">Puntaje Total</p>
             <p className="text-5xl font-mono font-bold">{result.score}</p>
           </div>
 
-          <p className="mt-12 opacity-80 animate-pulse">Waiting for next question...</p>
+          <p className="mt-12 opacity-80 animate-pulse">Esperando la siguiente pregunta...</p>
         </motion.div>
       )}
     </div>

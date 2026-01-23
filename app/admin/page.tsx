@@ -98,10 +98,10 @@ function BrandingTab() {
             exit={{ opacity: 0, y: -10 }}
             className="bg-white p-6 rounded-xl shadow-lg"
         >
-            <h2 className="text-xl font-semibold mb-6">Branding Configuration</h2>
+            <h2 className="text-xl font-semibold mb-6">Configuración de Marca</h2>
             <div className="grid gap-6">
                 <div>
-                    <label className="block text-sm font-medium mb-2">Game Title</label>
+                    <label className="block text-sm font-medium mb-2">Título del Juego</label>
                     <input
                         type="text"
                         className="w-full p-2 border rounded"
@@ -114,14 +114,14 @@ function BrandingTab() {
 
                 {/* Supabase Storage Upload */}
                 <div>
-                    <label className="block text-sm font-medium mb-2">Logo Upload</label>
+                    <label className="block text-sm font-medium mb-2">Subir Logo</label>
                     <div className="flex items-center space-x-4">
                         {settings.logo_url && (
                             <img src={settings.logo_url} className="h-12 w-12 object-contain border p-1 rounded" />
                         )}
                         <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded flex items-center space-x-2">
                             <Upload size={16} />
-                            <span>{uploading ? 'Uploading...' : 'Choose Image'}</span>
+                            <span>{uploading ? 'Subiendo...' : 'Elegir Imagen'}</span>
                             <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} disabled={uploading} />
                         </label>
                     </div>
@@ -130,7 +130,7 @@ function BrandingTab() {
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-2">
-                            Primary Color
+                            Color Primario
                         </label>
                         <div className="flex items-center space-x-2">
                             <input
@@ -148,7 +148,7 @@ function BrandingTab() {
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-2">
-                            Secondary Color
+                            Color Secundario
                         </label>
                         <div className="flex items-center space-x-2">
                             <input
@@ -171,7 +171,7 @@ function BrandingTab() {
                     className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium flex items-center justify-center space-x-2 hover:bg-green-700 disabled:opacity-50"
                 >
                     <Save size={18} />
-                    <span>{loading ? 'Saving...' : 'Save Branding'}</span>
+                    <span>{loading ? 'Guardando...' : 'Guardar Cambios'}</span>
                 </button>
             </div>
         </motion.div>
