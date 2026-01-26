@@ -70,7 +70,11 @@ function BrandingTab() {
         primary_color: '#000000',
         secondary_color: '#ffffff',
         game_title: '',
+        secondary_color: '#ffffff',
+        game_title: '',
         question_timer: 20,
+        points_base: 1000,
+        points_factor: 10,
     });
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -151,6 +155,31 @@ function BrandingTab() {
                     />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Puntos Base (por acierto)</label>
+                        <input
+                            type="number"
+                            className="w-full p-2 border rounded"
+                            value={settings.points_base}
+                            onChange={(e) =>
+                                setSettings({ ...settings, points_base: parseInt(e.target.value) || 0 })
+                            }
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Bonus Tiempo (pts/segundo)</label>
+                        <input
+                            type="number"
+                            className="w-full p-2 border rounded"
+                            value={settings.points_factor}
+                            onChange={(e) =>
+                                setSettings({ ...settings, points_factor: parseInt(e.target.value) || 0 })
+                            }
+                        />
+                    </div>
+                </div>
+
                 {/* Supabase Storage Upload */}
                 <div>
                     <label className="block text-sm font-medium mb-2">Subir Logo</label>
@@ -213,7 +242,7 @@ function BrandingTab() {
                     <span>{loading ? 'Guardando...' : 'Guardar Cambios'}</span>
                 </button>
             </div>
-        </motion.div>
+        </motion.div >
     );
 }
 
@@ -463,8 +492,9 @@ function ControlTab() {
 
         // 1. Delete all players
         await supabase.from('players').delete().neq('nickname', '___'); // Delete all rows
-        // 2. Reset active question
-        await supabase.from('game_control').update({ active_question_id: null, is_active: false }).eq('id', 1);
+        // 2. Reset active question AND Close Game to force logout
+        await supabase.from('game_control').update({ active_question_id: null, is_active: false, game_status: 'CLOSED' }).eq('id', 1);
+        setGameStatus('CLOSED');
 
         alert('El juego ha sido reiniciado');
     };

@@ -165,12 +165,15 @@ export default function ParticipantPage() {
     let newScore = 0;
 
     if (isCorrect) {
-      // Calculate Score: 1000 Base + (Remaining Seconds * 10)
+      // Calculate Score: Base + (Remaining Seconds * Factor)
       const now = Date.now();
       const timeTaken = (now - startTime) / 1000;
       const totalTime = settings?.question_timer || 20;
       const remainingTime = Math.max(0, totalTime - timeTaken);
-      const points = 1000 + Math.floor(remainingTime * 10);
+
+      const basePoints = settings?.points_base || 1000;
+      const timeFactor = settings?.points_factor || 10;
+      const points = basePoints + Math.floor(remainingTime * timeFactor);
 
       // Fetch current score first to be safe
       const { data: userData } = await supabase.from('players').select('score').eq('id', playerId).single();
