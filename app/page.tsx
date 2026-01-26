@@ -65,7 +65,31 @@ export default function ParticipantPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentQuestion?.id]); // Add dependency to re-check on question change
+  }, [currentQuestion?.id]);
+
+  useEffect(() => {
+    if (!playerId) return;
+
+    const channel = supabase.channel('player_status')
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'players', filter: `id=eq.${playerId}` },
+        (payload) => {
+          // We have been deleted/kicked/reset
+          localStorage.removeItem('auhoot_player_id');
+          localStorage.removeItem('auhoot_nickname');
+          setPlayerId(null);
+          setNickname('');
+          setJoined(false);
+          setResult(null);
+          setCurrentQuestion(null);
+          alert("El juego ha sido reiniciado por el presentador.");
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [playerId]);
 
   const fetchSettings = async () => {
     const { data } = await supabase.from('settings').select('*').single();
