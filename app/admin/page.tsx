@@ -70,6 +70,7 @@ function BrandingTab() {
         primary_color: '#000000',
         secondary_color: '#ffffff',
         game_title: '',
+        question_timer: 20,
     });
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -132,6 +133,20 @@ function BrandingTab() {
                         value={settings.game_title}
                         onChange={(e) =>
                             setSettings({ ...settings, game_title: e.target.value })
+                        }
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-2">Tiempo por Pregunta (segundos)</label>
+                    <input
+                        type="number"
+                        min="5"
+                        max="300"
+                        className="w-full p-2 border rounded"
+                        value={settings.question_timer}
+                        onChange={(e) =>
+                            setSettings({ ...settings, question_timer: parseInt(e.target.value) || 20 })
                         }
                     />
                 </div>

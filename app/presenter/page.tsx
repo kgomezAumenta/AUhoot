@@ -13,6 +13,7 @@ export default function PresenterPage() {
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [isSpinning, setIsSpinning] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [timer, setTimer] = useState(0);
 
     useEffect(() => {
         const session = localStorage.getItem('auhoot_presenter_session');
@@ -38,6 +39,26 @@ export default function PresenterPage() {
             supabase.removeChannel(channel);
         };
     }, []);
+
+    // Countdown Timer Effect
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (currentQuestion && timer > 0) {
+            interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
+        } else if (currentQuestion && timer === 0) {
+            // Time's up!
+            handleTimeUp();
+        }
+        return () => clearInterval(interval);
+    }, [currentQuestion, timer]);
+
+    const handleTimeUp = async () => {
+        // Close question / Stop Game
+        setCurrentQuestion(null);
+        await supabase.from('game_control').update({ active_question_id: null, is_active: false }).eq('id', 1);
+    };
 
     const handleLoginSuccess = () => {
         setIsAuthenticated(true);
@@ -78,7 +99,10 @@ export default function PresenterPage() {
 
         await new Promise(resolve => setTimeout(resolve, spinTime));
 
+        await new Promise(resolve => setTimeout(resolve, spinTime));
+
         setCurrentQuestion(selected);
+        setTimer(settings.question_timer || 20); // Default 20s
         setIsSpinning(false);
 
         // Update Game Control to show question to everyone
@@ -150,8 +174,17 @@ export default function PresenterPage() {
                                 key="question"
                                 initial={{ y: 50, opacity: 0 }}
                                 animate={{ y: 0, opacity: 1 }}
-                                className="w-full bg-white text-black rounded-2xl shadow-2xl p-8 text-center"
+                                className="w-full bg-white text-black rounded-2xl shadow-2xl p-8 text-center relative"
                             >
+                                {/* Timer Display */}
+                                <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full flex items-center justify-center border-4 border-white shadow-xl text-4xl font-black
+                                    ${timer <= 5 ? 'bg-red-600 animate-ping' : 'bg-blue-600'} text-white
+                                `}>
+                                    <div className={`w-full h-full rounded-full flex items-center justify-center ${timer <= 5 ? 'bg-red-600' : 'bg-blue-600'}`}>
+                                        {timer}
+                                    </div>
+                                </div>
+
                                 <h2 className="text-3xl font-bold mb-8">{currentQuestion.question_text}</h2>
                                 <div className="grid grid-cols-3 gap-4">
                                     {currentQuestion.options.map((opt: string, idx: number) => (
