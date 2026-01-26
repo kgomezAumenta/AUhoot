@@ -70,8 +70,6 @@ function BrandingTab() {
         primary_color: '#000000',
         secondary_color: '#ffffff',
         game_title: '',
-        secondary_color: '#ffffff',
-        game_title: '',
         question_timer: 20,
         points_base: 1000,
         points_factor: 10,
