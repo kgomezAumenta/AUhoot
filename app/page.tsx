@@ -18,8 +18,8 @@ export default function ParticipantPage() {
   const [gameStatus, setGameStatus] = useState('CLOSED');
   const [startTime, setStartTime] = useState<number>(0);
 
+  // 1. Mount: Check Session, Subscriptions, Initial Game State
   useEffect(() => {
-    // 1. Branding & Local Resume
     fetchSettings();
     const storedId = localStorage.getItem('auhoot_player_id');
     const storedNick = localStorage.getItem('auhoot_nickname');
@@ -27,12 +27,9 @@ export default function ParticipantPage() {
       setPlayerId(storedId);
       setNickname(storedNick);
       setJoined(true);
-      // Optional: Verify if player still exists in DB, but skip for MVP
     }
-  }, []);
 
-  useEffect(() => {
-    // 2. Realtime Game Control
+    // Realtime Game Control
     const channel = supabase.channel('participant_view')
       .on(
         'postgres_changes',
@@ -48,6 +45,11 @@ export default function ParticipantPage() {
           }
 
           if (newData.is_active && newData.active_question_id) {
+            // Only fetch if it's a DIFFERENT question or we don't have one
+            // We need to access the current value, but in useEffect closure it might be stale.
+            // Using a fetch check inside fetchQuestion or relying on ID comparison in the setter?
+            // Simplest: Always fetch, but ensure fetchQuestion doesn't reset result if ID matches?
+            // Actually, best to just fetch. The other useEffect handles restoration.
             fetchQuestion(newData.active_question_id);
           } else {
             setCurrentQuestion(null);
@@ -57,22 +59,28 @@ export default function ParticipantPage() {
       )
       .subscribe();
 
-    // Check if we already answered this specific question
-    if (localStorage.getItem(`auhoot_answered_${currentQuestion?.id}`)) {
-      const savedResult = localStorage.getItem(`auhoot_result_${currentQuestion?.id}`);
-      if (savedResult) {
-        setResult(JSON.parse(savedResult));
-      }
-    }
-
-    // Initial check
     checkActiveGame();
 
     return () => {
       supabase.removeChannel(channel);
     };
+  }, []); // Run ONCE on mount
+
+  // 2. Question Change: Restore Local State
+  useEffect(() => {
+    if (!currentQuestion?.id) return;
+
+    // Check if we already answered THIS specific question
+    if (localStorage.getItem(`auhoot_answered_${currentQuestion.id}`)) {
+      const savedResult = localStorage.getItem(`auhoot_result_${currentQuestion.id}`);
+      if (savedResult) {
+        setResult(JSON.parse(savedResult));
+        setIsAnswering(false); // Ensure input is locked
+      }
+    }
   }, [currentQuestion?.id]);
 
+  // 3. Player Status Listener
   useEffect(() => {
     if (!playerId) return;
 
@@ -81,14 +89,7 @@ export default function ParticipantPage() {
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'players', filter: `id=eq.${playerId}` },
         (payload) => {
-          // We have been deleted/kicked/reset
-          localStorage.removeItem('auhoot_player_id');
-          localStorage.removeItem('auhoot_nickname');
-          setPlayerId(null);
-          setNickname('');
-          setJoined(false);
-          setResult(null);
-          setCurrentQuestion(null);
+          handleLogout();
           alert("El juego ha sido reiniciado por el presentador.");
         }
       )
@@ -100,7 +101,14 @@ export default function ParticipantPage() {
   const handleLogout = () => {
     localStorage.removeItem('auhoot_player_id');
     localStorage.removeItem('auhoot_nickname');
-    window.location.reload();
+
+    // Reset State instead of Reloading (Fixes Blinking/Loop)
+    setPlayerId(null);
+    setNickname('');
+    setJoined(false);
+    setResult(null);
+    setCurrentQuestion(null);
+    // Note: gameStatus might still be CLOSED, which render loop handles correctly without reloading
   };
 
   const fetchSettings = async () => {
@@ -113,8 +121,6 @@ export default function ParticipantPage() {
     if (data) {
       setGameStatus(data.game_status || 'CLOSED');
 
-      // If game is closed on load, ensure we are logged out (unless we want to show the specific 'Game Inactive' screen persistently?)
-      // User request: "sacarlos" (remove them). So if closed, we logout.
       if (data.game_status === 'CLOSED') {
         handleLogout();
       }
@@ -128,12 +134,24 @@ export default function ParticipantPage() {
   };
 
   const fetchQuestion = async (id: string) => {
+    // Avoid double fetching/resetting if ID is same? 
+    // No, we want to ensure we have latest data.
     const { data } = await supabase.from('questions').select('*').eq('id', id).single();
     if (data) {
       setCurrentQuestion(data);
-      setResult(null);
-      setIsAnswering(false);
-      setStartTime(Date.now());
+      // ONLY reset result if it's a NEW question.
+      // But checking currentQuestion.id here is tricky due to closure/async.
+      // Instead, we always reset here, and let the `useEffect [currentQuestion.id]` restore it immediately after.
+      // This might cause a split-second flash of "unanswered" state.
+      // BETTER: Check local storage HERE before resetting.
+
+      const alreadyAnswered = localStorage.getItem(`auhoot_answered_${id}`);
+      if (!alreadyAnswered) {
+        setResult(null);
+        setIsAnswering(false);
+        setStartTime(Date.now());
+      }
+
       if (navigator.vibrate) navigator.vibrate(200);
     }
   };
