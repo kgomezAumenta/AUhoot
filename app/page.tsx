@@ -133,6 +133,7 @@ export default function ParticipantPage() {
       setCurrentQuestion(data);
       setResult(null);
       setIsAnswering(false);
+      setStartTime(Date.now());
       if (navigator.vibrate) navigator.vibrate(200);
     }
   };
