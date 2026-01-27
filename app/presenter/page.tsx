@@ -88,12 +88,21 @@ export default function PresenterPage() {
 
         setIsSpinning(true);
 
+        // Sound Effect
+        try {
+            const audio = new Audio('/spin.mp3'); // Ensure this file exists in public/
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log("Audio autoplay blocked", e));
+        } catch (err) {
+            console.error(err);
+        }
+
         // Clear Active Question first
         setCurrentQuestion(null);
         await supabase.from('game_control').update({ active_question_id: null, is_active: false }).eq('id', 1);
 
         // Simulate spin duration
-        const spinTime = 3000;
+        const spinTime = 4000; // Increased duration for better effect
         const randomIndex = Math.floor(Math.random() * questions.length);
         const selected = questions[randomIndex];
 
@@ -151,23 +160,72 @@ export default function PresenterPage() {
                                 initial={{ scale: 0.8, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0.8, opacity: 0 }}
-                                className="text-center"
+                                className="text-center relative"
                             >
-                                <motion.div
-                                    animate={{ rotate: isSpinning ? 360 * 5 : 0 }}
-                                    transition={{ duration: 3, ease: 'easeOut' }}
-                                    className="w-64 h-64 rounded-full border-8 border-white border-dashed flex items-center justify-center mb-8 mx-auto bg-white/10 backdrop-blur-sm"
-                                >
-                                    <span className="text-5xl font-bold">?</span>
-                                </motion.div>
+                                {/* Pointer */}
+                                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 z-20">
+                                    <div className="w-0 h-0 border-l-[25px] border-l-transparent border-t-[50px] border-t-yellow-400 border-r-[25px] border-r-transparent drop-shadow-2xl filter drop-shadow-lg"></div>
+                                </div>
+
+                                <div className="relative w-[500px] h-[500px] mx-auto mb-12">
+                                    {/* Outer Rim with Lights */}
+                                    <div className="absolute inset-0 rounded-full bg-red-700 shadow-2xl flex items-center justify-center">
+                                        {/* Light Bulbs */}
+                                        {Array.from({ length: 12 }).map((_, i) => (
+                                            <div
+                                                key={i}
+                                                className="absolute w-4 h-4 bg-yellow-200 rounded-full shadow-[0_0_10px_rgba(253,224,71,0.8)]"
+                                                style={{
+                                                    top: '50%',
+                                                    left: '50%',
+                                                    transform: `rotate(${i * 30}deg) translate(240px) rotate(-${i * 30}deg)`
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    {/* The Wheel */}
+                                    <motion.div
+                                        animate={{ rotate: isSpinning ? 360 * 6 + Math.floor(Math.random() * 360) : 0 }}
+                                        transition={{ duration: 4, ease: [0.2, 0.8, 0.2, 1] }}
+                                        className="absolute inset-[20px] rounded-full overflow-hidden border-4 border-white/50"
+                                        style={{
+                                            background: `conic-gradient(
+                                                #ef4444 0deg 30deg, 
+                                                #f97316 30deg 60deg, 
+                                                #eab308 60deg 90deg, 
+                                                #84cc16 90deg 120deg, 
+                                                #22c55e 120deg 150deg, 
+                                                #10b981 150deg 180deg, 
+                                                #06b6d4 180deg 210deg, 
+                                                #3b82f6 210deg 240deg, 
+                                                #6366f1 240deg 270deg, 
+                                                #8b5cf6 270deg 300deg, 
+                                                #d946ef 300deg 330deg, 
+                                                #f43f5e 330deg 360deg
+                                            )`
+                                        }}
+                                    >
+                                        {/* Segments (Visual separation lines if needed, or rely on gradient) */}
+                                        <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
+                                    </motion.div>
+
+                                    {/* Center Hub */}
+                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-white rounded-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)] flex items-center justify-center border-8 border-gray-100 z-10">
+                                        <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-400 rounded-full flex items-center justify-center">
+                                            <span className="text-2xl font-black text-gray-600 select-none">?</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <button
                                     onClick={spinRoulette}
                                     disabled={isSpinning || questions.length === 0}
-                                    className="px-12 py-4 bg-white text-black text-2xl font-bold rounded-full shadow-2xl hover:scale-105 transition-transform disabled:opacity-50"
+                                    className="px-16 py-6 bg-gradient-to-b from-yellow-400 to-yellow-600 text-white text-3xl font-black rounded-full shadow-[0_10px_0_rgb(161,98,7)] hover:translate-y-1 hover:shadow-[0_5px_0_rgb(161,98,7)] active:translate-y-2 active:shadow-none transition-all uppercase tracking-wider transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {isSpinning ? 'GIRANDO...' : 'GIRAR RULETA'}
+                                    {isSpinning ? '¡Girando!' : 'Girar Ahora'}
                                 </button>
-                                {questions.length === 0 && <p className="mt-4 opacity-75">No hay preguntas cargadas.</p>}
+                                {questions.length === 0 && <p className="mt-6 text-xl font-medium opacity-80">⚠ Carga preguntas en el Admin para empezar.</p>}
                             </motion.div>
                         ) : (
                             <motion.div
