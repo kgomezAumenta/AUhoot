@@ -26,7 +26,8 @@ export default function ParticipantPage() {
     if (storedId && storedNick) {
       setPlayerId(storedId);
       setNickname(storedNick);
-      setJoined(true);
+      // Don't set Joined=true immediately, verify first
+      verifyPlayer(storedId);
     }
 
     // Realtime Game Control
@@ -99,6 +100,10 @@ export default function ParticipantPage() {
   }, [playerId]);
 
   const handleLogout = () => {
+    // Clear specific game data but keep player ID if needed? 
+    // No, logout means full reset.
+    clearAnswerHistory();
+
     localStorage.removeItem('auhoot_player_id');
     localStorage.removeItem('auhoot_nickname');
 
@@ -109,6 +114,29 @@ export default function ParticipantPage() {
     setResult(null);
     setCurrentQuestion(null);
     // Note: gameStatus might still be CLOSED, which render loop handles correctly without reloading
+  };
+
+  const clearAnswerHistory = () => {
+    // Collect keys first to avoid issues while iterating
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('auhoot_answered_') || key.startsWith('auhoot_result_'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  };
+
+  const verifyPlayer = async (id: string) => {
+    const { data, error } = await supabase.from('players').select('id').eq('id', id).single();
+    if (error || !data) {
+      // Player not found on server (e.g. fresh restart), force logout
+      console.log("Player not valid, forcing logout");
+      handleLogout();
+    } else {
+      setJoined(true);
+    }
   };
 
   const fetchSettings = async () => {
@@ -161,6 +189,9 @@ export default function ParticipantPage() {
     if (!nickname.trim()) return;
 
     try {
+      // Clear any previous session garbage before joining
+      clearAnswerHistory();
+
       const { data, error } = await supabase.from('players').insert([{ nickname }]).select().single();
       if (error) {
         alert('Nickname might be taken, try another!');
