@@ -380,7 +380,7 @@ export default function PresenterPage() {
                                     {leaderboard[1] && (
                                         <div className="flex flex-col items-center w-1/3">
                                             <div className="mb-2 text-xl font-bold truncate max-w-full">{leaderboard[1].nickname}</div>
-                                            <div className="w-full h-32 bg-gray-300 rounded-t-lg shadow-lg flex flex-col items-center justify-end pb-4 text-4xl font-black text-white/50">
+                                            <div className="w-full h-32 bg-gray-300 rounded-t-lg shadow-lg flex flex-col items-center justify-end pb-4 text-4xl font-black text-gray-500">
                                                 <span className="text-3xl mb-1">🥈</span>
                                                 2
                                             </div>
@@ -390,10 +390,10 @@ export default function PresenterPage() {
 
                                     {/* 1st Place */}
                                     {leaderboard[0] && (
-                                        <div className="flex flex-col items-center w-1/3 z-10">
+                                        <div className="flex flex-col items-center w-1/3 z-10 relative">
                                             <div className="text-4xl absolute -top-16 animate-bounce">👑</div>
                                             <div className="mb-2 text-2xl font-black truncate max-w-full text-yellow-600">{leaderboard[0].nickname}</div>
-                                            <div className="w-full h-48 bg-yellow-400 rounded-t-lg shadow-xl flex flex-col items-center justify-end pb-4 text-6xl font-black text-white/50">
+                                            <div className="w-full h-48 bg-yellow-400 rounded-t-lg shadow-xl flex flex-col items-center justify-end pb-4 text-6xl font-black text-yellow-700">
                                                 <span className="text-5xl mb-2">🥇</span>
                                                 1
                                             </div>
@@ -405,7 +405,7 @@ export default function PresenterPage() {
                                     {leaderboard[2] && (
                                         <div className="flex flex-col items-center w-1/3">
                                             <div className="mb-2 text-xl font-bold truncate max-w-full">{leaderboard[2].nickname}</div>
-                                            <div className="w-full h-24 bg-orange-300 rounded-t-lg shadow-lg flex flex-col items-center justify-end pb-4 text-4xl font-black text-white/50">
+                                            <div className="w-full h-24 bg-orange-300 rounded-t-lg shadow-lg flex flex-col items-center justify-end pb-4 text-4xl font-black text-orange-700">
                                                 <span className="text-3xl mb-1">🥉</span>
                                                 3
                                             </div>
