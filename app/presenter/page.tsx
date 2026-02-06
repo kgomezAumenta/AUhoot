@@ -261,18 +261,16 @@ export default function PresenterPage() {
                                         className="absolute inset-[20px] rounded-full overflow-hidden border-4 border-white/50"
                                         style={{
                                             background: `conic-gradient(
-                                                #ef4444 0deg 30deg, 
-                                                #f97316 30deg 60deg, 
-                                                #eab308 60deg 90deg, 
-                                                #84cc16 90deg 120deg, 
-                                                #22c55e 120deg 150deg, 
-                                                #10b981 150deg 180deg, 
-                                                #06b6d4 180deg 210deg, 
-                                                #3b82f6 210deg 240deg, 
-                                                #6366f1 240deg 270deg, 
-                                                #8b5cf6 270deg 300deg, 
-                                                #d946ef 300deg 330deg, 
-                                                #f43f5e 330deg 360deg
+                                                #3b82f6 0deg 36deg, 
+                                                #22c55e 36deg 72deg, 
+                                                #a855f7 72deg 108deg, 
+                                                #ffffff 108deg 144deg, 
+                                                #f97316 144deg 180deg, 
+                                                #3b82f6 180deg 216deg, 
+                                                #22c55e 216deg 252deg, 
+                                                #a855f7 252deg 288deg, 
+                                                #ffffff 288deg 324deg, 
+                                                #f97316 324deg 360deg
                                             )`
                                         }}
                                     >
