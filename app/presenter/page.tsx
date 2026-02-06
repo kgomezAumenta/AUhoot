@@ -17,8 +17,9 @@ export default function PresenterPage() {
     const [timer, setTimer] = useState(0);
 
     // New States
-    const [viewMode, setViewMode] = useState<'lobby' | 'roulette' | 'question' | 'recap'>('lobby');
+    const [viewMode, setViewMode] = useState<'lobby' | 'roulette' | 'question' | 'recap' | 'podium'>('lobby');
     const [totalPlayers, setTotalPlayers] = useState(0);
+    const [playedQuestions, setPlayedQuestions] = useState<string[]>([]); // Track IDs of played questions
 
     useEffect(() => {
         const session = localStorage.getItem('auhoot_presenter_session');
@@ -100,7 +101,23 @@ export default function PresenterPage() {
     };
 
     const spinRoulette = async () => {
-        if (questions.length === 0 || isSpinning) return;
+        // 1. Check if Game Over (limit reached)
+        const limit = settings?.questions_limit || 10;
+        if (playedQuestions.length >= limit) {
+            setViewMode('podium');
+            return;
+        }
+
+        // 2. Filter available questions
+        const availableQuestions = questions.filter(q => !playedQuestions.includes(q.id));
+
+        if (availableQuestions.length === 0) {
+            alert("¡Se acabaron las preguntas disponibles!");
+            setViewMode('podium');
+            return;
+        }
+
+        if (isSpinning) return;
 
         setIsSpinning(true);
 
@@ -119,15 +136,19 @@ export default function PresenterPage() {
 
         // Simulate spin duration
         const spinTime = 4000;
-        const randomIndex = Math.floor(Math.random() * questions.length);
-        const selected = questions[randomIndex];
+        const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+        const selected = availableQuestions[randomIndex];
 
         await new Promise(resolve => setTimeout(resolve, spinTime));
 
-        await new Promise(resolve => setTimeout(resolve, spinTime));
+        await new Promise(resolve => setTimeout(resolve, spinTime)); // Double wait? Kept from original logic if intended
 
         setCurrentQuestion(selected);
         setTimer(settings.question_timer || 20);
+
+        // Track played question
+        setPlayedQuestions(prev => [...prev, selected.id]);
+
         setIsSpinning(false);
         setViewMode('question');
 
@@ -160,7 +181,7 @@ export default function PresenterPage() {
             </button>
 
             {/* Branding Header */}
-            <header className="absolute top-8 left-8 flex flex-col space-y-2">
+            <header className="absolute top-8 left-8 flex flex-col space-y-2 z-50">
                 {settings.logo_url && (
                     <img src={settings.logo_url} alt="Logo" className="h-32 w-auto object-contain" />
                 )}
@@ -342,6 +363,74 @@ export default function PresenterPage() {
                             </motion.div>
                         )}
 
+
+                        {/* PODIUM VIEW */}
+                        {viewMode === 'podium' && (
+                            <motion.div
+                                key="podium"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="w-full bg-white text-black rounded-3xl shadow-2xl p-12 text-center relative overflow-hidden"
+                            >
+                                <h2 className="text-5xl font-black mb-12 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500">
+                                    ¡JUEGO TERMINADO!
+                                </h2>
+
+                                {/* Top 3 Podium */}
+                                <div className="flex items-end justify-center space-x-4 h-64 mb-12">
+                                    {/* 2nd Place */}
+                                    {leaderboard[1] && (
+                                        <div className="flex flex-col items-center w-1/3">
+                                            <div className="mb-2 text-xl font-bold truncate max-w-full">{leaderboard[1].nickname}</div>
+                                            <div className="w-full h-32 bg-gray-300 rounded-t-lg shadow-lg flex items-end justify-center pb-4 text-4xl font-black text-white/50 relative">
+                                                <span className="absolute -top-10 text-3xl">🥈</span>
+                                                2
+                                            </div>
+                                            <div className="mt-2 font-mono font-bold text-gray-500">{leaderboard[1].score} pts</div>
+                                        </div>
+                                    )}
+
+                                    {/* 1st Place */}
+                                    {leaderboard[0] && (
+                                        <div className="flex flex-col items-center w-1/3 z-10">
+                                            <div className="text-4xl absolute -top-16 animate-bounce">👑</div>
+                                            <div className="mb-2 text-2xl font-black truncate max-w-full text-yellow-600">{leaderboard[0].nickname}</div>
+                                            <div className="w-full h-48 bg-yellow-400 rounded-t-lg shadow-xl flex items-end justify-center pb-4 text-6xl font-black text-white/50 relative">
+                                                <span className="absolute -top-12 text-5xl">🥇</span>
+                                                1
+                                            </div>
+                                            <div className="mt-2 font-mono font-bold text-yellow-600 text-2xl">{leaderboard[0].score} pts</div>
+                                        </div>
+                                    )}
+
+                                    {/* 3rd Place */}
+                                    {leaderboard[2] && (
+                                        <div className="flex flex-col items-center w-1/3">
+                                            <div className="mb-2 text-xl font-bold truncate max-w-full">{leaderboard[2].nickname}</div>
+                                            <div className="w-full h-24 bg-orange-300 rounded-t-lg shadow-lg flex items-end justify-center pb-4 text-4xl font-black text-white/50 relative">
+                                                <span className="absolute -top-10 text-3xl">🥉</span>
+                                                3
+                                            </div>
+                                            <div className="mt-2 font-mono font-bold text-gray-500">{leaderboard[2].score} pts</div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    onClick={async () => {
+                                        if (confirm('¿Reiniciar juego y volver al lobby?')) {
+                                            // Reset local state (but not players score unless explicitly requested via Admin)
+                                            // Ideally, "Recap" done.
+                                            setPlayedQuestions([]);
+                                            setViewMode('lobby');
+                                        }
+                                    }}
+                                    className="px-8 py-3 bg-gray-800 text-white rounded-lg font-bold hover:bg-black transition"
+                                >
+                                    Volver al Lobby
+                                </button>
+                            </motion.div>
+                        )}
                     </AnimatePresence>
                 </section>
 
@@ -394,6 +483,6 @@ export default function PresenterPage() {
                     </div>
                 </aside>
             </main>
-        </div>
+        </div >
     );
 }

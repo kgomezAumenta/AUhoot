@@ -73,6 +73,7 @@ function BrandingTab() {
         question_timer: 20,
         points_base: 1000,
         points_factor: 10,
+        questions_limit: 10,
     });
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -176,6 +177,20 @@ function BrandingTab() {
                             }
                         />
                     </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-2">Límite de Preguntas</label>
+                    <input
+                        type="number"
+                        min="1"
+                        className="w-full p-2 border rounded"
+                        value={settings.questions_limit || 10}
+                        onChange={(e) =>
+                            setSettings({ ...settings, questions_limit: parseInt(e.target.value) || 10 })
+                        }
+                    />
+                    <p className="text-xs text-gray-500 mt-1">El juego terminará después de esta cantidad de preguntas.</p>
                 </div>
 
                 {/* Supabase Storage Upload */}
