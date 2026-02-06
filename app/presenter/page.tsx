@@ -370,7 +370,7 @@ export default function PresenterPage() {
                                 key="podium"
                                 initial={{ scale: 0.8, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
-                                className="w-full bg-white text-black rounded-3xl shadow-2xl p-12 text-center relative overflow-hidden"
+                                className="w-full bg-white text-black rounded-3xl shadow-2xl p-12 text-center relative overflow-hidden mt-24"
                             >
                                 <h2 className="text-5xl font-black mb-12 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500">
                                     ¡JUEGO TERMINADO!
@@ -382,8 +382,8 @@ export default function PresenterPage() {
                                     {leaderboard[1] && (
                                         <div className="flex flex-col items-center w-1/3">
                                             <div className="mb-2 text-xl font-bold truncate max-w-full">{leaderboard[1].nickname}</div>
-                                            <div className="w-full h-32 bg-gray-300 rounded-t-lg shadow-lg flex items-end justify-center pb-4 text-4xl font-black text-white/50 relative">
-                                                <span className="absolute -top-10 text-3xl">🥈</span>
+                                            <div className="w-full h-32 bg-gray-300 rounded-t-lg shadow-lg flex flex-col items-center justify-end pb-4 text-4xl font-black text-white/50">
+                                                <span className="text-3xl mb-1">🥈</span>
                                                 2
                                             </div>
                                             <div className="mt-2 font-mono font-bold text-gray-500">{leaderboard[1].score} pts</div>
@@ -395,8 +395,8 @@ export default function PresenterPage() {
                                         <div className="flex flex-col items-center w-1/3 z-10">
                                             <div className="text-4xl absolute -top-16 animate-bounce">👑</div>
                                             <div className="mb-2 text-2xl font-black truncate max-w-full text-yellow-600">{leaderboard[0].nickname}</div>
-                                            <div className="w-full h-48 bg-yellow-400 rounded-t-lg shadow-xl flex items-end justify-center pb-4 text-6xl font-black text-white/50 relative">
-                                                <span className="absolute -top-12 text-5xl">🥇</span>
+                                            <div className="w-full h-48 bg-yellow-400 rounded-t-lg shadow-xl flex flex-col items-center justify-end pb-4 text-6xl font-black text-white/50">
+                                                <span className="text-5xl mb-2">🥇</span>
                                                 1
                                             </div>
                                             <div className="mt-2 font-mono font-bold text-yellow-600 text-2xl">{leaderboard[0].score} pts</div>
@@ -407,8 +407,8 @@ export default function PresenterPage() {
                                     {leaderboard[2] && (
                                         <div className="flex flex-col items-center w-1/3">
                                             <div className="mb-2 text-xl font-bold truncate max-w-full">{leaderboard[2].nickname}</div>
-                                            <div className="w-full h-24 bg-orange-300 rounded-t-lg shadow-lg flex items-end justify-center pb-4 text-4xl font-black text-white/50 relative">
-                                                <span className="absolute -top-10 text-3xl">🥉</span>
+                                            <div className="w-full h-24 bg-orange-300 rounded-t-lg shadow-lg flex flex-col items-center justify-end pb-4 text-4xl font-black text-white/50">
+                                                <span className="text-3xl mb-1">🥉</span>
                                                 3
                                             </div>
                                             <div className="mt-2 font-mono font-bold text-gray-500">{leaderboard[2].score} pts</div>
